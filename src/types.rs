@@ -1,8 +1,11 @@
 use crate::constants;
 use serde::{Deserialize, Serialize};
-use std::process::ExitCode;
-use std::process::Termination;
-use ethers::prelude::Address;
+use ethers::{
+    prelude::Address, 
+    types::{
+        H256, U256
+    }
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -35,9 +38,27 @@ pub struct Account {
     pub is_verified: bool,
 }
 
-impl Termination for Account {
-    fn report(self) -> ExitCode {
-        println!("Account Termination Trait");
-        ExitCode::from(42)
-    }
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Order {
+    pub hash: u64,
+    pub collectiona_ddress: Address,
+    pub token_id: U256,
+    pub is_order_ask: bool,
+    pub signer: Address,
+    pub strategy: Address,
+    pub currency_address: Address,
+    pub amount: u64,
+    pub price: U256,
+    pub nonce: u64,
+    pub start_time: u64,
+    pub end_time: u64,
+    pub min_percentage_to_ask: u64,
+    pub params: String,
+    pub status: String,
+    pub signature: Option<String>,
+    pub v: u8,
+    pub r: H256,
+    pub s: H256,
 }
+
