@@ -41,24 +41,24 @@ pub struct Account {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Order {
-    pub hash: u64,
-    pub collectiona_ddress: Address,
+    pub hash: String,
+    pub collection_address: Address,
     pub token_id: U256,
     pub is_order_ask: bool,
     pub signer: Address,
     pub strategy: Address,
     pub currency_address: Address,
-    pub amount: u64,
+    pub amount: String,
     pub price: U256,
-    pub nonce: u64,
+    pub nonce: String,
     pub start_time: u64,
     pub end_time: u64,
     pub min_percentage_to_ask: u64,
     pub params: String,
     pub status: String,
     pub signature: Option<String>,
-    pub v: u8,
-    pub r: H256,
-    pub s: H256,
+    pub v: Option<u8>,
+    pub r: Option<H256>,
+    pub s: Option<H256>,
 }
 
