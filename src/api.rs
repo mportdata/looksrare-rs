@@ -36,7 +36,7 @@ impl LooksRareApi {
         let data: Account = resp.data.ok_or(LooksRareApiError::AccountNotFound {
             address: req.address
         })?;
-        
+
         Ok(data)
     }
 
@@ -57,7 +57,7 @@ impl LooksRareApi {
         if let Some(_h) = &req.price { query.push(("price", serde_json::to_value(req.price)?)); };
         if let Some(_i) = &req.start_time { query.push(("startTime", serde_json::to_value(req.start_time)?)); };
         if let Some(_j) = &req.status { 
-            &req.status.unwrap().iter_mut().for_each(|x| { query.push(("status[]", serde_json::to_value(x.to_str()).unwrap())) } ); 
+            req.status.unwrap().iter_mut().for_each(|x| { query.push(("status[]", serde_json::to_value(x.to_str()).unwrap())) } ); 
         };
         if let Some(_k) = &req.pagination { query.push(("pagination", serde_json::to_value(req.pagination)?)); };
         if let Some(_l) = &req.sort { query.push(("sort", serde_json::to_value(req.sort)?)); };
@@ -186,18 +186,20 @@ mod tests {
             currency: None, 
             price: None, 
             start_time: None, 
-            status: Some(vec![Status::Valid, Status::Expired]),
+            status: Some(vec![Status::Cancelled]),
             pagination: None, 
             sort: None, 
         };
         
-        let input_signer = req.signer;
+        let input_signer: Address = req.signer.unwrap();
         
         let orders: Vec<Order> = api.get_orders(req).await.unwrap();
         
-        //let output_signer: = orders.signer;
+        let first_order: Order = orders.into_iter().nth(0).unwrap();
 
-        assert_eq!(1, 1);
+        let output_signer: Address = first_order.signer;
+
+        assert_eq!(input_signer, output_signer);
     }
 }
 
