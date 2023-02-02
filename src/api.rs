@@ -33,7 +33,10 @@ impl LooksRareApi {
         let res = self.client.get(url).query(&map).send().await?;
         let text = res.text().await?;
         let resp: AccountResponse = serde_json::from_str(&text)?;
-        let data: Account = resp.data.unwrap();
+        let data: Account = resp.data.ok_or(LooksRareApiError::AccountNotFound {
+            address: req.address
+        })?;
+        
         Ok(data)
     }
 
@@ -67,15 +70,9 @@ impl LooksRareApi {
         let text = res.text().await?;
         println!("{}",text);
         let resp: OrdersResponse = serde_json::from_str(&text)?;
-        println!("checkpoint test");
-        let data: Option<Vec<Order>> = resp.data;
+        let data: Vec<Order> = resp.data.ok_or(LooksRareApiError::OrdersNotFound)?;
 
-        let data_vec = match data {
-            Some(i) => i,
-            _ => vec![],
-        };
-        
-        Ok(data_vec)
+        Ok(data)
     }
 }
 
@@ -128,8 +125,10 @@ pub enum LooksRareApiError {
     Reqwest(#[from] reqwest::Error),
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
-    #[error("Order not found (address: {address}")]
+    #[error("Account not found (address: {address}")]
     AccountNotFound { address: Address },
+    #[error("Orders not found")]
+    OrdersNotFound,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -197,7 +196,7 @@ mod tests {
         let orders: Vec<Order> = api.get_orders(req).await.unwrap();
         
         //let output_signer: = orders.signer;
-        
+
         assert_eq!(1, 1);
     }
 }
