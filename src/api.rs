@@ -67,9 +67,15 @@ impl LooksRareApi {
         let text = res.text().await?;
         println!("{}",text);
         let resp: OrdersResponse = serde_json::from_str(&text)?;
-        let data: Vec<Order> = resp.data.unwrap();
+        println!("checkpoint test");
+        let data: Option<Vec<Order>> = resp.data;
+
+        let data_vec = match data {
+            Some(i) => i,
+            _ => vec![],
+        };
         
-        Ok(data)
+        Ok(data_vec)
     }
 }
 
@@ -181,7 +187,7 @@ mod tests {
             currency: None, 
             price: None, 
             start_time: None, 
-            status: Some(vec![Status::Valid]),
+            status: Some(vec![Status::Valid, Status::Expired]),
             pagination: None, 
             sort: None, 
         };
@@ -190,7 +196,8 @@ mod tests {
         
         let orders: Vec<Order> = api.get_orders(req).await.unwrap();
         
-        //let output_signer:  = orders.signer;
+        //let output_signer: = orders.signer;
+        
         assert_eq!(1, 1);
     }
 }
