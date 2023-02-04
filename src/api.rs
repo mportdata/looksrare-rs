@@ -2,7 +2,6 @@ use crate::types::{Account, Network, Order};
 use thiserror::Error;
 use ethers::{
     prelude::Address, 
-    types::U256,
 };
 use reqwest::{Client, ClientBuilder};
 use serde::{Deserialize, Serialize};
@@ -49,32 +48,23 @@ impl LooksRareApi {
 
         if let Some(_a) = &req.is_order_ask { query.push(("isOrderAsk", serde_json::to_value(req.is_order_ask)?)); };
         if let Some(_b) = &req.collection { query.push(("collection", serde_json::to_value(req.collection)?)); };
-        if let Some(_c) = &req.token_id { query.push(("tokenId", serde_json::to_value(req.token_id)?)); };
+        if let Some(_c) = &req.token_id { query.push(("tokenId", serde_json::to_value(req.token_id.unwrap().to_string())?)); };
         if let Some(_d) = &req.signer { query.push(("signer", serde_json::to_value(req.signer)?)); };
-        if let Some(_e) = &req.nonce { query.push(("nonce", serde_json::to_value(req.nonce)?)); };
+        if let Some(_e) = &req.nonce { query.push(("nonce", serde_json::to_value(req.nonce.unwrap().to_string())?)); };
         if let Some(_f) = &req.strategy { query.push(("strategy", serde_json::to_value(req.strategy)?)); };
         if let Some(_g) = &req.currency { query.push(("currency", serde_json::to_value(req.currency)?)); };
-        if let Some(_h) = &req.price { query.push(("price", serde_json::to_value(req.price)?)); };
-        if let Some(_i) = &req.start_time { query.push(("startTime", serde_json::to_value(req.start_time)?)); };
-        
-        if let Some(_j) = &req.status { 
-            req.status.unwrap().iter_mut().for_each(|x| { query.push(("status[]", serde_json::to_value(x.to_str()).unwrap())) } ); 
+        if let Some(_h) = &req.price {
+            if let Some(_min) = &req.price.clone().unwrap().min { query.push(("price[min]", serde_json::to_value(req.price.clone().unwrap().min.unwrap().to_string())?)); };
+            if let Some(_max) = &req.price.clone().unwrap().max { query.push(("price[max]", serde_json::to_value(req.price.clone().unwrap().max.unwrap().to_string())?)); };
         };
-        
-        if let Some(_k) = &req.pagination {
-            if let Some(_first) = &req.pagination.clone().unwrap().first { 
-                query.push(
-                    ("pagination[first]",
-                    serde_json::to_value(
-                        req.pagination.clone().unwrap().first.unwrap().to_string()
-                    )?)
-                ); 
-            };
-            
+        if let Some(_i) = &req.start_time { query.push(("startTime", serde_json::to_value(req.start_time.unwrap().to_string())?)); };
+        if let Some(_j) = &req.end_time { query.push(("endTime", serde_json::to_value(req.end_time.unwrap().to_string())?)); };
+        if let Some(_k) = &req.status { req.status.unwrap().iter_mut().for_each(|x| { query.push(("status[]", serde_json::to_value(x.to_str()).unwrap())) } ); };
+        if let Some(_l) = &req.pagination {
+            if let Some(_first) = &req.pagination.clone().unwrap().first { query.push(("pagination[first]", serde_json::to_value(req.pagination.clone().unwrap().first.unwrap().to_string())?)); };    
             if let Some(_cursor) = &req.pagination.clone().unwrap().cursor { query.push(("pagination[cursor]", serde_json::to_value(req.pagination.clone().unwrap().cursor)?)); }; 
         };
-
-        if let Some(_l) = &req.sort { query.push(("sort", serde_json::to_value(req.sort.unwrap().to_str())?)); };
+        if let Some(_m) = &req.sort { query.push(("sort", serde_json::to_value(req.sort.unwrap().to_str())?)); };
 
         let res = self.client.get(url).query(&query).send().await?;
         let text = res.text().await?;
@@ -102,13 +92,14 @@ struct AccountResponse {
 pub struct OrdersRequest {
     pub is_order_ask: Option<bool>,
     pub collection: Option<Address>,
-    pub token_id: Option<String>,
+    pub token_id: Option<u64>,
     pub signer: Option<Address>,
-    pub nonce: Option<String>,
+    pub nonce: Option<u64>,
     pub strategy: Option<Address>,
     pub currency: Option<Address>,
-    pub price: Option<U256>,
+    pub price: Option<Price>,
     pub start_time: Option<u64>,
+    pub end_time: Option<u64>,
     pub status: Option<Vec<Status>>,
     pub pagination: Option<Pagination>,
     pub sort: Option<Sort>,
@@ -179,6 +170,12 @@ impl Sort {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Price {
+    min: Option<u128>,
+    max: Option<u128>,
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -208,13 +205,17 @@ mod tests {
         let req = OrdersRequest {
             is_order_ask: Some(true),
             collection: Some("0x34d85c9cdeb23fa97cb08333b511ac86e1c4e258".parse().unwrap()),
-            token_id: Some(String::from("62962")),
+            token_id: Some(62962),
             signer: Some("0x9E69b59b8d2A094CB1117f92Ff7DCf51Ed467B41".parse().unwrap()),
-            nonce: Some(String::from("17832")),
+            nonce: Some(17832),
             strategy: Some("0x579af6fd30bf83a5ac0d636bc619f98dbdeb930c".parse().unwrap()), 
-            currency: None, 
-            price: None, 
-            start_time: None, 
+            currency: Some("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2".parse().unwrap()), 
+            price: Some(Price{
+                min: Some(12000000000000000000000000000000000000),
+                max: Some(13000000000000000000000000000000000000),                
+            }), 
+            start_time: Some(1667747434), 
+            end_time: Some(1667754634),
             status: Some(vec![Status::Cancelled]),
             pagination: Some(Pagination {
                 first: Some(4),
@@ -225,13 +226,15 @@ mod tests {
         
         let input_is_order_ask: bool = req.is_order_ask.unwrap();
         let input_collection: Address = req.collection.unwrap();
-        let input_token_id: String = req.clone().token_id.unwrap();
+        let input_token_id: u64 = req.clone().token_id.unwrap();
         let input_signer: Address = req.signer.unwrap();
-        let input_nonce: String = req.clone().nonce.unwrap();
+        let input_nonce: u64 = req.clone().nonce.unwrap();
         let input_strategy: Address = req.strategy.unwrap();
-        // let input_currency
-        // let input_price
-        // let input_start_time
+        let input_currency: Address = req.currency.unwrap();
+        let input_min_price: u128 = req.price.clone().unwrap().min.unwrap();
+        let input_max_price: u128 = req.price.clone().unwrap().max.unwrap();
+        let input_start_time: u64 = req.start_time.unwrap();
+        let input_end_time: u64 = req.end_time.unwrap();
         let input_status: Vec<Status> = req.clone().status.unwrap();
         // let input_sort
 
@@ -241,13 +244,14 @@ mod tests {
 
         let output_is_order_ask: bool = first_order.is_order_ask;
         let output_collection: Address = first_order.collection_address;
-        let output_token_id: String = first_order.token_id;
+        let output_token_id: u64 = first_order.token_id.parse().unwrap();
         let output_signer: Address = first_order.signer;
-        let output_nonce: String = first_order.nonce;
+        let output_nonce: u64 = first_order.nonce.parse().unwrap();
         let output_strategy: Address = first_order.strategy;
-        // let input_currency
-        // let input_price
-        // let input_start_time
+        let output_currency: Address = first_order.currency_address;
+        let output_price: u128 = first_order.price.parse().unwrap();
+        let output_start_time: u64 = first_order.start_time;
+        let output_end_time: u64 = first_order.end_time;
         let output_status: String = first_order.status;
 
         assert_eq!(input_is_order_ask, output_is_order_ask);
@@ -256,6 +260,12 @@ mod tests {
         assert_eq!(input_signer, output_signer);
         assert_eq!(input_nonce, output_nonce);
         assert_eq!(input_strategy, output_strategy);
+        assert_eq!(input_currency, output_currency);
+        let greater_than_min_price: bool = input_min_price <= output_price;
+        let less_than_max_price: bool = input_max_price >= output_price;
+        assert!(greater_than_min_price && less_than_max_price);
+        assert_eq!(input_start_time, output_start_time);
+        assert_eq!(input_end_time, output_end_time);
         // test if output status is contained in list of input status
         assert!(input_status.iter().any(|i| i.to_str()==output_status));
     }
@@ -274,24 +284,21 @@ mod tests {
             currency: None, 
             price: None, 
             start_time: None, 
+            end_time: None,
             status: None,
             pagination: Some(Pagination {
                 first: Some(4),
-                cursor: None,
+                cursor: Some("0xd12240238374bbb1b23078fc71feeffa1d6c54b81888dfc5d9ea54d17c6a30a7".parse().unwrap()),
             }),
             sort: None, 
         };
         
         let input_pagination_first: usize = req.clone().pagination.unwrap().first.unwrap().try_into().unwrap();
-        // let input_pagination_cursor
 
         let orders: Vec<Order> = api.get_orders(req).await.unwrap();
         let orders_len: usize = orders.len();
-        let first_order: Order = orders.into_iter().nth(0).unwrap();
-        println!("{}",serde_json::to_string(&first_order).unwrap());
 
         let output_pagination_first: usize = orders_len;
-        //let output_pagination_cursor = 
 
         assert_eq!(input_pagination_first, output_pagination_first);
     }
