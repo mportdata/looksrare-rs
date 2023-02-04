@@ -2,9 +2,7 @@ use crate::constants;
 use serde::{Deserialize, Serialize};
 use ethers::{
     prelude::Address, 
-    types::{
-        H256, U256
-    }
+    types::H256,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -43,13 +41,13 @@ pub struct Account {
 pub struct Order {
     pub hash: String,
     pub collection_address: Address,
-    pub token_id: U256,
+    pub token_id: String,
     pub is_order_ask: bool,
     pub signer: Address,
     pub strategy: Address,
     pub currency_address: Address,
     pub amount: String,
-    pub price: U256,
+    pub price: String,
     pub nonce: String,
     pub start_time: u64,
     pub end_time: u64,
