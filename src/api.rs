@@ -114,8 +114,8 @@ struct OrdersResponse {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Pagination {
-    first: Option<u64>,
-    cursor: Option<String>,
+    pub first: Option<u64>,
+    pub cursor: Option<String>,
 }
 
 
@@ -141,7 +141,7 @@ pub enum Status {
 }
 
 impl Status {
-    fn to_str(&self) -> &str {
+    pub fn to_str(&self) -> &str {
         match &self {
             Status::Cancelled => "CANCELLED",
             Status::Executed => "EXECUTED",
@@ -172,8 +172,8 @@ impl Sort {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Price {
-    min: Option<u128>,
-    max: Option<u128>,
+    pub min: Option<u128>,
+    pub max: Option<u128>,
 }
 
 
@@ -236,7 +236,6 @@ mod tests {
         let input_start_time: u64 = req.start_time.unwrap();
         let input_end_time: u64 = req.end_time.unwrap();
         let input_status: Vec<Status> = req.clone().status.unwrap();
-        // let input_sort
 
         let orders: Vec<Order> = api.get_orders(req).await.unwrap();
         let first_order: Order = orders.into_iter().nth(0).unwrap();
@@ -288,7 +287,7 @@ mod tests {
             status: None,
             pagination: Some(Pagination {
                 first: Some(4),
-                cursor: Some("0xd12240238374bbb1b23078fc71feeffa1d6c54b81888dfc5d9ea54d17c6a30a7".parse().unwrap()),
+                cursor: Some(String::from("0xd12240238374bbb1b23078fc71feeffa1d6c54b81888dfc5d9ea54d17c6a30a7")),
             }),
             sort: None, 
         };
