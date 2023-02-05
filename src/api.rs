@@ -74,6 +74,33 @@ impl LooksRareApi {
 
         Ok(data)
     }
+
+    pub async fn create_an_order(&self, req: CreateAnOrderRequest) -> Result<(), LooksRareApiError> {
+        let api = self.network.api();
+        let url = format!("{}/orders", api);
+
+        let mut query = vec![];
+
+        query.push(("signature", serde_json::to_value(req.signature)?));
+        query.push(("collection", serde_json::to_value(req.collection)?));
+
+        if let Some(_token_id) = &req.token_id { query.push(("token_id", serde_json::to_value(req.token_id)?)); };
+
+        query.push(("signer", serde_json::to_value(req.signer)?));
+        query.push(("strategy", serde_json::to_value(req.strategy)?));
+        query.push(("is_order_ask", serde_json::to_value(req.is_order_ask)?));
+        query.push(("currency", serde_json::to_value(req.currency)?));
+        query.push(("nonce", serde_json::to_value(req.nonce)?));
+        query.push(("amount", serde_json::to_value(req.amount)?));
+        query.push(("price", serde_json::to_value(req.price)?));
+        query.push(("start_time", serde_json::to_value(req.start_time)?));
+        query.push(("end_time", serde_json::to_value(req.end_time)?));
+        query.push(("min_percentage_to_ask", serde_json::to_value(req.min_percentage_to_ask)?));
+
+        if let Some(_params) = &req.params { query.push(("params", serde_json::to_value(req.params)?)); };
+
+        Ok(())
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -103,6 +130,24 @@ pub struct OrdersRequest {
     pub status: Option<Vec<Status>>,
     pub pagination: Option<Pagination>,
     pub sort: Option<Sort>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateAnOrderRequest {
+    pub signature: String,
+    pub collection: Address,
+    pub token_id: Option<u64>,
+    pub signer: Address,
+    pub strategy: Address,
+    pub is_order_ask: bool,
+    pub currency: Address,
+    pub nonce: u64,
+    pub amount: u64,
+    pub price: u128,
+    pub start_time: u64,
+    pub end_time: u64,
+    pub min_percentage_to_ask: u64,
+    pub params: Option<Vec<String>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
