@@ -117,7 +117,7 @@ mod tests {
         let input_max_price: Option<u128> = Some(13000000000000000000000000000000000000);                
         let input_start_time: Option<u64> = Some(1667747434);
         let input_end_time:Option<u64> = Some(1667754634);
-        let input_status: Option<Vec<Status>> = Some(vec![Status::Cancelled]);
+        let input_status: Option<Vec<Status>> = Some(vec![Status::Cancelled, Status::Expired]);
         let input_num_of_orders: Option<u64> = Some(4);
         let input_start_after_hash: Option<String> = None;
         let input_sort: Option<Sort> = Some(Sort::Newest);

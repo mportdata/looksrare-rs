@@ -216,7 +216,7 @@ mod tests {
             }), 
             start_time: Some(1667747434), 
             end_time: Some(1667754634),
-            status: Some(vec![Status::Cancelled]),
+            status: Some(vec![Status::Cancelled,Status::Expired]),
             pagination: Some(Pagination {
                 first: Some(4),
                 cursor: None,
