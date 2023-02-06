@@ -7,7 +7,6 @@ pub mod types;
 use api::{
     LooksRareApi, 
     LooksRareApiError, 
-    AccountRequest, 
     OrdersRequest,
     Pagination,
     Price,
@@ -28,12 +27,9 @@ pub async fn get_account(
     address: Address
 ) -> Result<Account, ClientError> {
     // get the account
-    let req = AccountRequest {
-        address: address,
-    };
 
     let account = api
-        .get_account(req)
+        .get_account(address)
         .await?;
     
     Ok(account)
@@ -79,6 +75,19 @@ pub async fn get_orders(
         .await?;
 
     Ok(orders)
+}
+
+pub async fn get_nonce(
+    api: &LooksRareApi, 
+    address: Address
+) -> Result<u64, ClientError> {
+    // get the account
+
+    let nonce = api
+        .get_nonce(address)
+        .await?;
+    
+    Ok(nonce)
 }
 
 

@@ -23,17 +23,17 @@ impl LooksRareApi {
         }
     }
 
-    pub async fn get_account(&self, req: AccountRequest) -> Result<Account, LooksRareApiError> {
+    pub async fn get_account(&self, address: Address) -> Result<Account, LooksRareApiError> {
         let api = self.network.api();
         let url = format!("{}/accounts", api);
         let mut map = std::collections::HashMap::new();
-        map.insert("address", serde_json::to_value(req.address)?);
+        map.insert("address", serde_json::to_value(address)?);
 
         let res = self.client.get(url).query(&map).send().await?;
         let text = res.text().await?;
         let resp: AccountResponse = serde_json::from_str(&text)?;
         let data: Account = resp.data.ok_or(LooksRareApiError::AccountNotFound {
-            address: req.address
+            address: address
         })?;
 
         Ok(data)
@@ -75,32 +75,23 @@ impl LooksRareApi {
         Ok(data)
     }
 
-    pub async fn create_an_order(&self, req: CreateAnOrderRequest) -> Result<(), LooksRareApiError> {
+    pub async fn get_nonce(&self, address: Address) -> Result<u64, LooksRareApiError> {
         let api = self.network.api();
-        let url = format!("{}/orders", api);
+        let url = format!("{}/orders/nonce", api);
 
         let mut query = vec![];
+        query.push(("address", serde_json::to_value(address)?));
 
-        query.push(("signature", serde_json::to_value(req.signature)?));
-        query.push(("collection", serde_json::to_value(req.collection)?));
+        let res = self.client.get(url).query(&query).send().await?;
+        let text = res.text().await?;
 
-        if let Some(_token_id) = &req.token_id { query.push(("token_id", serde_json::to_value(req.token_id)?)); };
+        let resp: NonceResponse = serde_json::from_str(&text)?;
+        let nonce_string: String = resp.data.ok_or(LooksRareApiError::OrdersNotFound)?;
+        let nonce: u64 = nonce_string.parse().unwrap();
 
-        query.push(("signer", serde_json::to_value(req.signer)?));
-        query.push(("strategy", serde_json::to_value(req.strategy)?));
-        query.push(("is_order_ask", serde_json::to_value(req.is_order_ask)?));
-        query.push(("currency", serde_json::to_value(req.currency)?));
-        query.push(("nonce", serde_json::to_value(req.nonce)?));
-        query.push(("amount", serde_json::to_value(req.amount)?));
-        query.push(("price", serde_json::to_value(req.price)?));
-        query.push(("start_time", serde_json::to_value(req.start_time)?));
-        query.push(("end_time", serde_json::to_value(req.end_time)?));
-        query.push(("min_percentage_to_ask", serde_json::to_value(req.min_percentage_to_ask)?));
-
-        if let Some(_params) = &req.params { query.push(("params", serde_json::to_value(req.params)?)); };
-
-        Ok(())
+        Ok(nonce)
     }
+
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -133,28 +124,17 @@ pub struct OrdersRequest {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CreateAnOrderRequest {
-    pub signature: String,
-    pub collection: Address,
-    pub token_id: Option<u64>,
-    pub signer: Address,
-    pub strategy: Address,
-    pub is_order_ask: bool,
-    pub currency: Address,
-    pub nonce: u64,
-    pub amount: u64,
-    pub price: u128,
-    pub start_time: u64,
-    pub end_time: u64,
-    pub min_percentage_to_ask: u64,
-    pub params: Option<Vec<String>>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
 struct OrdersResponse {
     success: bool,
     message: Option<String>,
     data: Option<Vec<Order>>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct NonceResponse {
+    success: bool,
+    message: Option<String>,
+    data: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -175,6 +155,8 @@ pub enum LooksRareApiError {
     AccountNotFound { address: Address },
     #[error("Orders not found")]
     OrdersNotFound,
+    #[error("Nonce not found (address: {address}")]
+    NonceNotFound { address: Address },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -232,13 +214,8 @@ mod tests {
     async fn can_get_account() {
         let api = LooksRareApi::new();
 
-        let req = AccountRequest {
-            address: "0x3d67b76CF3dcc881255eb2262E788BE03b2f5B9F"
-                .parse()
-                .unwrap(),
-        };
-        let input_address = req.address;
-        let account: Account = api.get_account(req).await.unwrap();
+        let input_address: Address = "0x3d67b76CF3dcc881255eb2262E788BE03b2f5B9F".parse().unwrap();
+        let account: Account = api.get_account(input_address).await.unwrap();
         let output_address: Address = account.address;
         assert_eq!(input_address, output_address);
     }
