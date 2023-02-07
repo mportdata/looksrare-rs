@@ -62,7 +62,7 @@ pub struct Order {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Collection {
+pub struct CollectionInformation {
     pub address: Address,
     pub owner: Address,
     pub setter: Option<Address>,
@@ -86,3 +86,42 @@ pub struct Collection {
     pub banner_uri: Option<String>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CollectionStats {
+    pub address: Address,
+    pub count_owners: String,
+    pub total_supply: String,
+    pub floor_price: String,
+    pub floor_change_24h: String,
+    pub floor_change_7d: String,
+    pub floor_change_30d: String,
+    pub market_cap: String,
+    pub volume_24h: String,
+    pub average_24h: String,
+    pub count_24h: String,
+    pub change_24h: String,
+    pub volume_7d: String,
+    pub average_7d: String,
+    pub count_7d: String,
+    pub change_7d: String,
+    pub volume_1m: String,
+    pub average_1m: String,
+    pub count_1m: String,
+    pub change_1m: String,
+    pub volume_3m: String,
+    pub average_3m: String,
+    pub count_3m: String,
+    pub change_3m: String,
+    pub volume_6m: String,
+    pub average_6m: String,
+    pub count_6m: String,
+    pub change_6m: String,
+    pub volume_1y: String,
+    pub average_1y: String,
+    pub count_1y: String,
+    pub change_1y: String,
+    pub volume_all: String,
+    pub average_all: String,
+    pub count_all: String,
+}

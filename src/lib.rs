@@ -16,7 +16,8 @@ use api::{
 
 use types::{
     Account, 
-    Collection,
+    CollectionInformation,
+    CollectionStats,
     Order,
 };
 
@@ -94,12 +95,23 @@ pub async fn get_nonce(
 pub async fn get_collection_information(
     api: &LooksRareApi,
     address: Address,
-) -> Result<Collection, ClientError> {
-    let collection = api
+) -> Result<CollectionInformation, ClientError> {
+    let collection_information = api
         .get_collection_information(address)
         .await?;
 
-    Ok(collection)
+    Ok(collection_information)
+}
+
+pub async fn get_collection_stats(
+    api: &LooksRareApi,
+    address: Address,
+) -> Result<CollectionStats, ClientError> {
+    let collection_stats = api
+        .get_collection_stats(address)
+        .await?;
+
+    Ok(collection_stats)
 }
 
 #[derive(Debug, Error)]
@@ -195,8 +207,17 @@ mod tests {
     async fn can_get_collection_information() {
         let api = LooksRareApi::new();
         let input_address: Address = "0x1A92f7381B9F03921564a437210bB9396471050C".parse().unwrap();
-        let collection: Collection = get_collection_information(&api, input_address).await.unwrap();
-        let output_address: Address = collection.address;
+        let collection_information: CollectionInformation = get_collection_information(&api, input_address).await.unwrap();
+        let output_address: Address = collection_information.address;
+        assert_eq!(input_address, output_address);
+    }
+
+    #[tokio::test]
+    async fn can_get_collection_stats() {
+        let api = LooksRareApi::new();
+        let input_address: Address = "0x1A92f7381B9F03921564a437210bB9396471050C".parse().unwrap();
+        let collection_stats: CollectionStats = get_collection_stats(&api, input_address).await.unwrap();
+        let output_address: Address = collection_stats.address;
         assert_eq!(input_address, output_address);
     }
 }

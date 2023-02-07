@@ -1,4 +1,4 @@
-use crate::types::{Account, Collection, Network, Order};
+use crate::types::{Account, CollectionInformation, CollectionStats, Network, Order};
 use thiserror::Error;
 use ethers::{
     prelude::Address, 
@@ -92,7 +92,7 @@ impl LooksRareApi {
         Ok(nonce)
     }
 
-    pub async fn get_collection_information(&self, address:Address) -> Result<Collection, LooksRareApiError> {
+    pub async fn get_collection_information(&self, address:Address) -> Result<CollectionInformation, LooksRareApiError> {
         let api = self.network.api();
         let url = format!("{}/collections", api);
 
@@ -103,9 +103,25 @@ impl LooksRareApi {
         let text = res.text().await?;
 
         let resp: CollectionInformationResponse = serde_json::from_str(&text)?;
-        let collection: Collection = resp.data.ok_or(LooksRareApiError::OrdersNotFound)?;
+        let collection_information: CollectionInformation = resp.data.ok_or(LooksRareApiError::OrdersNotFound)?;
 
-        Ok(collection)
+        Ok(collection_information)
+    }
+
+    pub async fn get_collection_stats(&self, address:Address) -> Result<CollectionStats, LooksRareApiError> {
+        let api = self.network.api();
+        let url = format!("{}/collections/stats", api);
+
+        let mut query = vec![];
+        query.push(("address", serde_json::to_value(address)?));
+
+        let res = self.client.get(url).query(&query).send().await?;
+        let text = res.text().await?;
+
+        let resp: CollectionStatsResponse = serde_json::from_str(&text)?;
+        let collection_stats: CollectionStats = resp.data.ok_or(LooksRareApiError::OrdersNotFound)?;
+
+        Ok(collection_stats)
     }
 
 }
@@ -157,7 +173,14 @@ struct NonceResponse {
 struct CollectionInformationResponse {
     success: bool,
     message: Option<String>,
-    data: Option<Collection>,
+    data: Option<CollectionInformation>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct CollectionStatsResponse {
+    success: bool,
+    message: Option<String>,
+    data: Option<CollectionStats>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -353,11 +376,26 @@ mod tests {
 
         let input_address: Address = "0x1A92f7381B9F03921564a437210bB9396471050C".parse().unwrap();
         
-        let collection: Collection = api.get_collection_information(input_address).await.unwrap();
+        let collection_information: CollectionInformation = api.get_collection_information(input_address).await.unwrap();
        
-        let output_address: Address = collection.address;
+        let output_address: Address = collection_information.address;
 
-        println!("{}",serde_json::to_string(&collection).unwrap());
+        println!("{}",serde_json::to_string(&collection_information).unwrap());
+
+        assert_eq!(input_address, output_address);
+    }
+
+    #[tokio::test]
+    async fn can_get_collection_stats() {
+        let api = LooksRareApi::new();
+
+        let input_address: Address = "0x1A92f7381B9F03921564a437210bB9396471050C".parse().unwrap();
+        
+        let collection_stats: CollectionStats = api.get_collection_stats(input_address).await.unwrap();
+       
+        let output_address: Address = collection_stats.address;
+
+        println!("{}",serde_json::to_string(&collection_stats).unwrap());
 
         assert_eq!(input_address, output_address);
     }
