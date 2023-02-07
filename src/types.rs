@@ -60,3 +60,29 @@ pub struct Order {
     pub s: Option<H256>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Collection {
+    pub address: Address,
+    pub owner: Address,
+    pub setter: Option<Address>,
+    pub admin: Option<Address>,
+    pub name: String,
+    pub description: Option<String>,
+    pub symbol: Option<String>,
+    pub type_: String,
+    pub website_link: Option<String>,
+    pub facebook_link: Option<String>,
+    pub twitter_link: Option<String>,
+    pub instagram_link: Option<String>,
+    pub telegram_link: Option<String>,
+    pub medium_link: Option<String>,
+    pub discord_link: Option<String>,
+    pub is_verified: bool,
+    pub is_explicit: bool,
+    #[serde(rename = "logoURI")]
+    pub logo_uri: Option<String>,
+    #[serde(rename = "bannerURI")]
+    pub banner_uri: Option<String>,
+}
+

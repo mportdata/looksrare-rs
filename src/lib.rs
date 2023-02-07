@@ -16,7 +16,8 @@ use api::{
 
 use types::{
     Account, 
-    Order
+    Collection,
+    Order,
 };
 
 use thiserror::Error;
@@ -79,7 +80,7 @@ pub async fn get_orders(
 
 pub async fn get_nonce(
     api: &LooksRareApi, 
-    address: Address
+    address: Address,
 ) -> Result<u64, ClientError> {
     // get the account
 
@@ -90,6 +91,16 @@ pub async fn get_nonce(
     Ok(nonce)
 }
 
+pub async fn get_collection_information(
+    api: &LooksRareApi,
+    address: Address,
+) -> Result<Collection, ClientError> {
+    let collection = api
+        .get_collection_information(address)
+        .await?;
+
+    Ok(collection)
+}
 
 #[derive(Debug, Error)]
 pub enum ClientError {
@@ -178,5 +189,14 @@ mod tests {
         assert_eq!(input_end_time.unwrap(), output_end_time);
         // test if output status is contained in list of input status
         assert!(input_status.unwrap().iter().any(|i| i.to_str()==output_status));
+    }
+
+    #[tokio::test]
+    async fn can_get_collection_information() {
+        let api = LooksRareApi::new();
+        let input_address: Address = "0x1A92f7381B9F03921564a437210bB9396471050C".parse().unwrap();
+        let collection: Collection = get_collection_information(&api, input_address).await.unwrap();
+        let output_address: Address = collection.address;
+        assert_eq!(input_address, output_address);
     }
 }
