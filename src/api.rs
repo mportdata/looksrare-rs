@@ -1,4 +1,4 @@
-use crate::types::{Account, CollectionInformation, CollectionStats, Network, Order};
+use crate::types::{Account, CollectionInformation, CollectionRewards, CollectionStats, Network, Order};
 use thiserror::Error;
 use ethers::{
     prelude::Address, 
@@ -86,7 +86,9 @@ impl LooksRareApi {
         let text = res.text().await?;
 
         let resp: NonceResponse = serde_json::from_str(&text)?;
-        let nonce_string: String = resp.data.ok_or(LooksRareApiError::OrdersNotFound)?;
+        let nonce_string: String = resp.data.ok_or(LooksRareApiError::NonceNotFound {
+            address: address
+        })?;
         let nonce: u64 = nonce_string.parse().unwrap();
 
         Ok(nonce)
@@ -103,7 +105,9 @@ impl LooksRareApi {
         let text = res.text().await?;
 
         let resp: CollectionInformationResponse = serde_json::from_str(&text)?;
-        let collection_information: CollectionInformation = resp.data.ok_or(LooksRareApiError::OrdersNotFound)?;
+        let collection_information: CollectionInformation = resp.data.ok_or(LooksRareApiError::CollectionNotFound{
+            address: address
+        })?;
 
         Ok(collection_information)
     }
@@ -117,11 +121,25 @@ impl LooksRareApi {
 
         let res = self.client.get(url).query(&query).send().await?;
         let text = res.text().await?;
-
         let resp: CollectionStatsResponse = serde_json::from_str(&text)?;
-        let collection_stats: CollectionStats = resp.data.ok_or(LooksRareApiError::OrdersNotFound)?;
+        let collection_stats: CollectionStats = resp.data.ok_or(LooksRareApiError::CollectionNotFound {
+            address: address
+        })?;
 
         Ok(collection_stats)
+    }
+
+    pub async fn get_top_5_listing_rewards_collections(&self) -> Result<Vec<CollectionRewards>, LooksRareApiError> {
+        let api = self.network.api();
+        let url = format!("{}/collections/listing-rewards", api);
+
+        let res = self.client.get(url).send().await?;
+        let text = res.text().await?;
+        println!("{}",text);
+        let resp: Top5ListingRewardsCollectionsResponse = serde_json::from_str(&text)?;
+        let top_5_listing_rewards_collections: Vec<CollectionRewards> = resp.data;
+
+        Ok(top_5_listing_rewards_collections)
     }
 
 }
@@ -184,12 +202,17 @@ struct CollectionStatsResponse {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+struct Top5ListingRewardsCollectionsResponse {
+    success: bool,
+    message: Option<String>,
+    data: Vec<CollectionRewards>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Pagination {
     pub first: Option<u64>,
     pub cursor: Option<String>,
 }
-
-
 
 #[derive(Debug, Error)]
 pub enum LooksRareApiError {
@@ -203,6 +226,8 @@ pub enum LooksRareApiError {
     OrdersNotFound,
     #[error("Nonce not found (address: {address}")]
     NonceNotFound { address: Address },
+    #[error("Collection not found (address: {address}")]
+    CollectionNotFound { address: Address },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -307,7 +332,6 @@ mod tests {
 
         let orders: Vec<Order> = api.get_orders(req).await.unwrap();
         let first_order: Order = orders.into_iter().nth(0).unwrap();
-        println!("{}",serde_json::to_string(&first_order).unwrap());
 
         let output_is_order_ask: bool = first_order.is_order_ask;
         let output_collection: Address = first_order.collection_address;
@@ -380,8 +404,6 @@ mod tests {
        
         let output_address: Address = collection_information.address;
 
-        println!("{}",serde_json::to_string(&collection_information).unwrap());
-
         assert_eq!(input_address, output_address);
     }
 
@@ -395,9 +417,18 @@ mod tests {
        
         let output_address: Address = collection_stats.address;
 
-        println!("{}",serde_json::to_string(&collection_stats).unwrap());
-
         assert_eq!(input_address, output_address);
+    }
+
+    #[tokio::test]
+    async fn can_get_top_5_listing_rewards_collections() {
+        let api = LooksRareApi::new();
+        
+        let top_5_listing_rewards_collections: Vec<CollectionRewards> = api.get_top_5_listing_rewards_collections().await.unwrap();
+
+        let num_of_collections: usize = top_5_listing_rewards_collections.len();
+        println!("{}", num_of_collections);
+        assert_eq!(num_of_collections, 5);
     }
 }
 

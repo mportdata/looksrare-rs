@@ -17,6 +17,7 @@ use api::{
 use types::{
     Account, 
     CollectionInformation,
+    CollectionRewards,
     CollectionStats,
     Order,
 };
@@ -112,6 +113,16 @@ pub async fn get_collection_stats(
         .await?;
 
     Ok(collection_stats)
+}
+
+pub async fn get_top_5_listing_rewards_collections(
+    api: &LooksRareApi,
+) -> Result<Vec<CollectionRewards>, ClientError> {
+    let top_5_listing_rewards_collections = api
+        .get_top_5_listing_rewards_collections()
+        .await?;
+
+    Ok(top_5_listing_rewards_collections)
 }
 
 #[derive(Debug, Error)]
@@ -219,5 +230,13 @@ mod tests {
         let collection_stats: CollectionStats = get_collection_stats(&api, input_address).await.unwrap();
         let output_address: Address = collection_stats.address;
         assert_eq!(input_address, output_address);
+    }
+
+    #[tokio::test]
+    async fn can_get_top_5_listing_rewards_collections() {
+        let api = LooksRareApi::new();
+        let top_5_listing_rewards_collections: Vec<CollectionRewards> = get_top_5_listing_rewards_collections(&api).await.unwrap();
+        let num_of_collections: usize = top_5_listing_rewards_collections.len();
+        assert_eq!(num_of_collections, 5);
     }
 }

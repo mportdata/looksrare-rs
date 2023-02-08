@@ -99,7 +99,7 @@ pub struct CollectionStats {
     pub market_cap: String,
     pub volume_24h: String,
     pub average_24h: String,
-    pub count_24h: String,
+    pub count_24h: Option<String>,
     pub change_24h: String,
     pub volume_7d: String,
     pub average_7d: String,
@@ -124,4 +124,13 @@ pub struct CollectionStats {
     pub volume_all: String,
     pub average_all: String,
     pub count_all: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CollectionRewards {
+    pub collection: CollectionInformation,
+    pub volume_24h_global: String,
+    pub points: u64,
+    pub floor_global: String,
 }
